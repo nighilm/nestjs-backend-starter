@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in the deployment environment}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in the deployment environment}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the deployment environment}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - '5432:5432'
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${NODE_ENV}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: 3000
+      API_PREFIX: ${API_PREFIX:-api}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the deployment environment}
+      FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL in the deployment environment}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-__Host-session}
+      SESSION_IDLE_TIMEOUT_SECONDS: ${SESSION_IDLE_TIMEOUT_SECONDS:-86400}
+      SESSION_ABSOLUTE_TIMEOUT_SECONDS: ${SESSION_ABSOLUTE_TIMEOUT_SECONDS:-604800}
+      SESSION_ACTIVITY_REFRESH_SECONDS: ${SESSION_ACTIVITY_REFRESH_SECONDS:-3600}
+      SESSION_SECURE: ${SESSION_SECURE:-true}
+      SESSION_SAME_SITE: ${SESSION_SAME_SITE:-lax}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
+
+volumes:
+  postgres_data:

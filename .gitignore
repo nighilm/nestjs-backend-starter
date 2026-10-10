@@ -1,0 +1,20 @@
+# Node / NestJS
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+
+# Prisma
+prisma/.env
+.prisma/
+src/generated/prisma/
+
+# OS/editor
+.DS_Store
+.vscode/
+
+# Logs
+*.log
+.env
